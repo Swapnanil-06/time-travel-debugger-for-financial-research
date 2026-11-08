@@ -2,6 +2,8 @@
 
 **Capture, compare and replay financial research runs.**
 
+**[Open the live demo](https://financial-research-project.swapnanilchattopadhyay06.workers.dev)** — a guided walkthrough explains the research example and controls on your first visit.
+
 A financial research workbench that captures a model's inputs and output together, investigates differences between runs, and re-executes earlier research from its original artifacts.
 
 The demo changes **one historical Treasury-yield observation**, while leaving the model, parameters, and final observed yield untouched. The five-step forecast changes by **−6.25 basis points**. Replay recovers the original output exactly; the release gate rejects the changed candidate against the original approval.
