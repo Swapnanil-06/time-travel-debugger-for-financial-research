@@ -94,7 +94,7 @@ function renderAnalysis() {
     ["OUTPUT DIFFERENCE", signed(delta), "bp", `Candidate minus reference · T+${c.common_step}`, Math.abs(delta) > 0.000001],
     ["CHANGED OBSERVATIONS", c.data_changes.length, "", `${b.observations} → ${a.observations} observations captured`, false]
   ].map(([label, value, unit, note, accent]) => `<div class="metric ${accent ? "accent" : ""}"><div class="metric-label">${label}</div><div class="metric-value">${value}<span class="unit">${unit}</span></div><div class="metric-note">${note}</div></div>`).join("");
-  const titles = { data: "The data changed.<br>The code didn’t.", source: "A different model.<br>A different result.", config: "Same model.<br>Different assumptions.", environment: "The runtime changed." };
+  const titles = { data: "Data snapshot differs", source: "Model source differs", config: "Configuration differs", environment: "Environment differs" };
   if (changedInputs.length === 1) {
     $("#finding-title").innerHTML = titles[changedInputs[0]];
     const copies = {
@@ -105,13 +105,14 @@ function renderAnalysis() {
     };
     $("#finding-copy").textContent = copies[changedInputs[0]];
   } else if (!changedInputs.length) {
-    $("#finding-title").innerHTML = "Same inputs.<br>Same answer.";
+    $("#finding-title").textContent = "Input artifacts match";
     $("#finding-copy").textContent = "All captured input fingerprints match. Run labels and timestamps may differ without changing the computation.";
   } else {
-    $("#finding-title").innerHTML = "Several things changed.<br>Separate the effects.";
+    $("#finding-title").textContent = "Multiple inputs differ";
     $("#finding-copy").textContent = `${changedInputs.length} input artifacts differ. Controlled replays swap data, model and configuration in a stated order to investigate the output difference.`;
   }
-  $("#fingerprints").innerHTML = ["source", "data", "config"].map(key => `<div class="fingerprint ${c.changed_artifacts.includes(key) ? "changed" : ""}"><span>${human[key]}</span><span>${c.changed_artifacts.includes(key) ? "≠ changed" : "= identical"}</span></div>`).join("");
+  $("#fingerprints").innerHTML = ["source", "data", "config", "environment", "output"].map(key => `<div class="fingerprint ${c.changed_artifacts.includes(key) ? "changed" : ""}"><span>${human[key]}</span><code title="Reference: ${b.artifacts[key]}&#10;Candidate: ${a.artifacts[key]}">${short(a.artifacts[key])}</code><span class="fingerprint-state">${c.changed_artifacts.includes(key) ? "DIFF" : "MATCH"}</span></div>`).join("");
+  $("#run-context").innerHTML = `<table><thead><tr><th>Role</th><th>Run ID</th><th>As-of observation</th><th>Model</th><th>Lookback</th><th>Horizon</th><th>Runtime</th></tr></thead><tbody>${[["REF", b], ["CAND", a]].map(([role, run]) => `<tr><td>${role}</td><td>${escapeHtml(run.id)}</td><td>${escapeHtml(run.as_of)}</td><td>${escapeHtml(run.model)}</td><td>${run.config.lookback}</td><td>${run.config.horizon}</td><td>CPython ${escapeHtml(run.environment.python)}</td></tr>`).join("")}</tbody></table>`;
   const diffRows = [
     ...c.data_changes.map(row => `<tr><td>${escapeHtml(row.date)}</td><td class="value-old">${escapeHtml(row.before)}</td><td class="value-new">${escapeHtml(row.after)}</td><td><span class="change-badge">${row.before !== null && row.after !== null ? `${signed((Number(row.after) - Number(row.before)) * 100)} bp` : row.kind}</span></td></tr>`),
     ...c.config_changes.map(row => `<tr><td>${escapeHtml(row.key)}</td><td class="value-old">${escapeHtml(row.before)}</td><td class="value-new">${escapeHtml(row.after)}</td><td><span class="change-badge">parameter</span></td></tr>`)
@@ -145,14 +146,14 @@ function renderChart() {
   const seriesPath = (rows) => rows.map((r, i) => `${i ? "L" : "M"}${x(dates.indexOf(r.date)).toFixed(2)},${y(Number(r.value)).toFixed(2)}`).join(" ");
   const futurePath = run => [{ x: dates.indexOf(run.as_of), value: Number(run.output.last_yield) }, ...run.output.forecast.map((value, i) => ({ x: dates.indexOf(run.as_of) + i + 1, value: Number(value) }))].map((p, i) => `${i ? "L" : "M"}${x(p.x).toFixed(2)},${y(p.value).toFixed(2)}`).join(" ");
   let markup = `<title>Treasury yield comparison: ${escapeHtml(c.before.label)} versus ${escapeHtml(c.after.label)}</title><desc>Observed yields in percent with forecasts at observation steps. Reference and candidate data snapshots may differ.</desc>`;
-  markup += `<rect x="${x(dates.length - 1)}" y="${top}" width="${width - right - x(dates.length - 1)}" height="${height - top - bottom}" fill="#faf7f1"/>`;
+  markup += `<rect class="forecast-region" x="${x(dates.length - 1)}" y="${top}" width="${width - right - x(dates.length - 1)}" height="${height - top - bottom}"/>`;
   for (let i = 0; i <= 4; i++) { const value = min + (max - min) * i / 4; markup += `<line class="grid" x1="${left}" x2="${width - right}" y1="${y(value)}" y2="${y(value)}"/><text x="${left - 9}" y="${y(value) + 3}" text-anchor="end">${fixed(value, 2)}</text>`; }
   markup += `<line class="boundary" x1="${x(dates.length - 1)}" x2="${x(dates.length - 1)}" y1="${top}" y2="${height - bottom}"/><text x="${x(dates.length - 1) + 8}" y="${top + 10}">FORECAST</text>`;
-  markup += `<path class="series" stroke="#a6b09d" d="${seriesPath(history)}"/>`;
-  if (c.changed_artifacts.includes("data")) markup += `<path class="series" stroke="#bc5930" stroke-opacity=".5" d="${seriesPath(candidateHistory)}"/>`;
+  markup += `<path class="series observed-line" d="${seriesPath(history)}"/>`;
+  if (c.changed_artifacts.includes("data")) markup += `<path class="series corrected-line" d="${seriesPath(candidateHistory)}"/>`;
   markup += `<path class="series reference-line" d="${futurePath(c.before)}"/><path class="series candidate-line" d="${futurePath(c.after)}"/>`;
   const afterLast = dates.indexOf(c.after.as_of) + c.after.config.horizon;
-  markup += `<circle cx="${x(afterLast)}" cy="${y(Number(c.after.output.forecast.at(-1)))}" r="4" fill="#bc5930" stroke="white" stroke-width="2"/>`;
+  markup += `<circle class="forecast-point" cx="${x(afterLast)}" cy="${y(Number(c.after.output.forecast.at(-1)))}" r="3"/>`;
   for (const i of [0, Math.floor(dates.length * .35), Math.floor(dates.length * .7)]) markup += `<text x="${x(i)}" y="${height - 10}" text-anchor="middle">${escapeHtml(dates[i].slice(5))}</text>`;
   markup += `<text x="${x(total - 1)}" y="${height - 10}" text-anchor="end">T+${forecastCount}</text>`;
   svg.innerHTML = markup;
@@ -188,16 +189,16 @@ async function replayReference() {
   const result = await api(`/api/runs/${referenceId}/replay`, {});
   if (referenceId !== state.before) return;
   state.replayed = true;
-  $("#replay-result").innerHTML = `<div class="result-heading"><span>✓</span> Original result reproduced. Byte for byte.</div><p>The captured model ran again against its original snapshot and parameters. Its output hash matches the original artifact.</p><div class="hash-line">SHA-256 ${result.actual_sha256}</div><div class="check-tags">${result.checks.map(check => `<span>✓ ${escapeHtml(check)}</span>`).join("")}</div>`;
+  $("#replay-result").innerHTML = `<div class="result-heading">PASS / Exact output hash match</div><p>The captured model was re-executed with its original data and configuration.</p><div class="hash-line">expected  ${result.expected_sha256}<br>actual    ${result.actual_sha256}</div><div class="check-tags">${result.checks.map(check => `<span>PASS · ${escapeHtml(check)}</span>`).join("")}</div>`;
   $("#replay-result").hidden = false;
   $("#replay-result").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 const tourSteps = [
-  ["01 / 04", "The same code can tell a different story.", "Compare the original research with an injected data correction. The model and parameters are identical. One older observation changed; the final observed yield did not."],
-  ["02 / 04", "Follow the evidence back to one observation.", "The input diff identifies the exact corrected date. Controlled replay isolates the data change. Now replay the reference to recover the original output from its captured inputs."],
-  ["03 / 04", "Recover the original answer.", "The server re-executed the original captured source, data and parameters. The resulting output fingerprint matches. This verifies this execution; it does not claim the forecast is accurate."],
-  ["04 / 04", "Keep the approval boundary intact.", "Approve the original research, then check the corrected candidate. Release is blocked because the data and output differ. Select the same run on both sides to demonstrate a passing check."]
+  ["01 / 04", "Compare original and corrected snapshots", "Model source and configuration match. One historical observation contains an injected +25 bp correction; the final observed yield is unchanged."],
+  ["02 / 04", "Inspect the observation diff", "The input diff identifies the corrected date. Sequential replay substitutes the candidate data while holding source and configuration fixed."],
+  ["03 / 04", "Verify reference replay", "The server re-executed the captured source, data and configuration. Expected and actual output digests match. This verifies reproducibility, not forecast accuracy."],
+  ["04 / 04", "Check the approved artifact set", "The original reference is approved. The candidate is blocked because data and output differ. Select identical approved artifacts to check the passing path."]
 ];
 
 async function advanceTour() {

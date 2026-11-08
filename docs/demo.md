@@ -1,6 +1,6 @@
 # A 90-second walkthrough
 
-Start the app with `python -m app.server`, open http://127.0.0.1:8765 and select **Start the investigation**.
+Start the app with `python -m app.server`, open http://127.0.0.1:8765 and select **Run demo sequence**.
 
 ## 0–20 seconds: the changed answer
 

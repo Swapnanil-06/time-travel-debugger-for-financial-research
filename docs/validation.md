@@ -22,6 +22,7 @@ Checked in the desktop app's Chromium-based in-app browser:
 - Artifact ledger, captured source and environment, and downloadable JSON evidence bundle.
 - Default panel layout, 1440 × 1100 desktop layout and 390 × 844 mobile layout. Capture remained reachable on mobile, with no document-level horizontal overflow in the checked views.
 - Browser error log was empty after the desktop investigation check.
+- The technical interface revision was checked with captured run metadata, five artifact fingerprints, and explicit expected/actual replay digests visible in the comparison workspace.
 
 `workbench.jpg` is a screenshot of the running interface, not a mockup. Local test databases and downloaded test artifacts are not committed.
 

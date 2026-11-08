@@ -1,6 +1,6 @@
 # Research Replay
 
-**Same code. Different answer. Find out why.**
+**Capture, compare and replay financial research runs.**
 
 A financial research workbench that captures a model's inputs and output together, investigates differences between runs, and re-executes earlier research from its original artifacts.
 
@@ -20,7 +20,7 @@ cd time-travel-debugger-for-financial-research
 python -m app.server
 ```
 
-Open **http://127.0.0.1:8765** and select **Start the investigation**. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
+Open **http://127.0.0.1:8765** and select **Run demo sequence**. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
 
 Prefer a terminal? The complete investigation also runs without a browser and uses a disposable database:
 
