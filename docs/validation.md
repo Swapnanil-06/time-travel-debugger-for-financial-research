@@ -23,6 +23,7 @@ Checked in the desktop app's Chromium-based in-app browser:
 - Default panel layout, 1440 × 1100 desktop layout and 390 × 844 mobile layout. Capture remained reachable on mobile, with no document-level horizontal overflow in the checked views.
 - Browser error log was empty after the desktop investigation check.
 - The technical interface revision was checked with captured run metadata, five artifact fingerprints, and explicit expected/actual replay digests visible in the comparison workspace.
+- The dark terminal theme was checked on desktop and at 390 × 844, including the configuration dialog, dark native controls, chart colour roles and a successful exact-output replay.
 
 `workbench.jpg` is a screenshot of the running interface, not a mockup. Local test databases and downloaded test artifacts are not committed.
 
