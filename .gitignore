@@ -12,3 +12,10 @@ artifacts/
 .agents/
 .DS_Store
 Thumbs.db
+node_modules/
+.wrangler/
+app/_cloud_data.py
+dist/
+build/
+*.egg-info/
+python_modules/

@@ -1,7 +1,7 @@
 "use strict";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { runs: [], comparison: null, before: "", after: "", tab: "analysis", sequence: 0, tour: -1, replayed: false };
+const state = { runs: [], comparison: null, before: "", after: "", tab: "analysis", sequence: 0, tour: -1, tourSequence: 0, tourBusy: false, replayed: false };
 const escapeHtml = (value) => String(value ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fixed = (value, decimals = 2) => Number(value).toFixed(decimals);
 const signed = (value, decimals = 2) => `${Number(value) > 0 ? "+" : ""}${fixed(value, decimals)}`;
@@ -194,29 +194,144 @@ async function replayReference() {
   $("#replay-result").scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+const TOUR_KEY = "research-replay-walkthrough-v1";
+let tourPreviousFocus = null;
 const tourSteps = [
-  ["01 / 04", "Compare original and corrected snapshots", "Model source and configuration match. One historical observation contains an injected +25 bp correction; the final observed yield is unchanged."],
-  ["02 / 04", "Inspect the observation diff", "The input diff identifies the corrected date. Sequential replay substitutes the candidate data while holding source and configuration fixed."],
-  ["03 / 04", "Verify reference replay", "The server re-executed the captured source, data and configuration. Expected and actual output digests match. This verifies reproducibility, not forecast accuracy."],
-  ["04 / 04", "Check the approved artifact set", "The original reference is approved. The candidate is blocked because data and output differ. Select identical approved artifacts to check the passing path."]
+  {
+    title: "Start with two saved experiments",
+    copy: "A run is a saved experiment: its code, data, settings and answer. We have selected two runs for you. The reference is the original; the candidate uses one deliberately changed data point.",
+    explanation: "Use these selectors whenever you want to compare two experiments.",
+    target: ".comparison-bar"
+  },
+  {
+    title: "See exactly which number changed",
+    copy: "We changed the Treasury yield recorded on 30 May 2024 from 4.55% to 4.80%. This table pinpoints that difference. The code and settings stayed the same.",
+    explanation: "This is an injected example, not a real correction reported by FRED.",
+    target: ".detail-grid .card:first-child"
+  },
+  {
+    title: "The same code now gives a different answer",
+    copy: "The original forecast is 4.3125%. After that older data point changes, it becomes 4.2500%. The difference is 6.25 basis points. One basis point is 0.01 percentage points.",
+    explanation: "This is why saving code alone is not enough to reproduce research. The forecast model is only an illustration.",
+    target: "#metrics"
+  },
+  {
+    title: "Replay recovers the original answer",
+    copy: "We have now re-run the original code with its original saved data and settings. The expected and actual fingerprints match, so the original result was reproduced exactly.",
+    explanation: "A fingerprint is a checksum of the output. Matching it checks reproducibility, not whether the prediction was accurate.",
+    target: "#replay-result"
+  },
+  {
+    title: "Changed research cannot reuse an old approval",
+    copy: "We approved the original run, then checked the changed candidate. It was blocked because its data and result no longer match what was approved.",
+    explanation: "This demonstrates a handover check. It does not deploy a trading job or make an investment decision.",
+    target: "#release-result"
+  },
+  {
+    title: "Try your own experiment",
+    copy: "After closing this guide, choose Capture a run. Try a different model or lookback, then compare it with the original. Open Artifact ledger to inspect or export exactly what was saved.",
+    explanation: "Your experiments are kept in this workspace. Restart the guide with Guided walkthrough whenever you need it.",
+    target: "capture"
+  }
 ];
 
-async function advanceTour() {
-  if (state.tour === 3) { state.tour = -1; $("#tour-panel").hidden = true; return; }
-  const next = state.tour + 1;
-  if (next === 0) { await choose(seedRun(1).id, seedRun(2).id); showTab("analysis"); }
-  if (next === 1) showTab("analysis");
-  if (next === 2) { showTab("analysis"); await replayReference(); }
-  if (next === 3) {
-    showTab("release");
-    await api(`/api/runs/${state.before}/approve`, {});
-    await compare();
-    renderReleaseResult(await api("/api/release", { approved_id: state.before, candidate_id: state.after }));
+function walkthroughSeen() {
+  try { return localStorage.getItem(TOUR_KEY) === "done"; } catch { return false; }
+}
+
+function tourTarget() {
+  const selector = tourSteps[state.tour]?.target;
+  if (selector === "capture") return $("#new-run").getBoundingClientRect().width ? $("#new-run") : $("#mobile-new-run");
+  return selector ? $(selector) : null;
+}
+
+function positionWalkthrough() {
+  if (state.tour < 0 || $("#tour-panel").hidden) return;
+  const target = tourTarget();
+  if (!target) return;
+  const box = target.getBoundingClientRect();
+  const panel = $("#tour-panel"), ring = $("#tour-spotlight");
+  const margin = 12, gap = 14, viewportWidth = document.documentElement.clientWidth;
+  const left = Math.max(5, box.left - 5), top = Math.max(5, box.top - 5);
+  ring.style.left = `${left}px`; ring.style.top = `${top}px`;
+  ring.style.width = `${Math.max(10, Math.min(viewportWidth - left - 5, box.width + 10))}px`;
+  ring.style.height = `${Math.max(10, Math.min(innerHeight - top - 5, box.bottom - top + 5))}px`;
+  panel.style.width = `${Math.min(390, viewportWidth - margin * 2)}px`;
+  const width = panel.offsetWidth, height = panel.offsetHeight;
+  let x = Math.min(Math.max(margin, box.left), viewportWidth - width - margin);
+  let y;
+  if (box.bottom + gap + height < innerHeight - margin) y = box.bottom + gap;
+  else if (box.top - gap - height > margin) y = box.top - gap - height;
+  else if (box.right + gap + width < viewportWidth - margin) { x = box.right + gap; y = Math.max(margin, box.top); }
+  else if (box.height + gap + height < innerHeight - margin * 2 && box.top > margin + 2) {
+    // Temporary space below the workspace lets short targets move upward, so
+    // the instruction never has to cover the very result it is explaining.
+    window.scrollBy(0, box.top - margin);
+    requestAnimationFrame(positionWalkthrough);
+    return;
+  } else y = innerHeight - height - margin;
+  panel.style.left = `${x}px`;
+  panel.style.top = `${Math.max(margin, Math.min(y, innerHeight - height - margin))}px`;
+}
+
+function closeWalkthrough() {
+  state.tour = -1; state.tourSequence++; state.tourBusy = false;
+  for (const id of ["#tour-panel", "#tour-blocker", "#tour-spotlight"]) $(id).hidden = true;
+  document.body.classList.remove("walkthrough-active");
+  try { localStorage.setItem(TOUR_KEY, "done"); } catch { /* Storage can be unavailable in private browser contexts. */ }
+  const focus = tourPreviousFocus?.isConnected ? tourPreviousFocus : $("#tour-button");
+  focus.focus({ preventScroll: true });
+}
+
+async function showWalkthroughStep(index) {
+  if (state.tourBusy) return;
+  if (index >= tourSteps.length) { closeWalkthrough(); return; }
+  const generation = ++state.tourSequence;
+  state.tourBusy = true;
+  $("#tour-next").disabled = true; $("#tour-back").disabled = true;
+  try {
+    if (index === 0) {
+      await choose(seedRun(1).id, seedRun(2).id);
+      showTab("analysis");
+    } else if (index <= 3) {
+      showTab("analysis");
+      if (index === 3) await replayReference();
+    } else if (index === 4) {
+      showTab("release");
+      await api(`/api/runs/${state.before}/approve`, {});
+      await compare();
+      renderReleaseResult(await api("/api/release", { approved_id: state.before, candidate_id: state.after }));
+    } else showTab("analysis");
+    if (generation !== state.tourSequence) return;
+    state.tour = index;
+    const step = tourSteps[index];
+    $("#tour-step").textContent = `STEP ${index + 1} OF ${tourSteps.length}`;
+    $("#tour-title").textContent = step.title;
+    $("#tour-copy").textContent = step.copy;
+    $("#tour-explanation").textContent = step.explanation;
+    $("#tour-progress").innerHTML = tourSteps.map((_, i) => `<span class="${i <= index ? "complete" : ""}"></span>`).join("");
+    $("#tour-next").textContent = index === tourSteps.length - 1 ? "Start exploring" : "Next →";
+    for (const id of ["#tour-panel", "#tour-blocker", "#tour-spotlight"]) $(id).hidden = false;
+    document.body.classList.add("walkthrough-active");
+    tourTarget()?.scrollIntoView({ block: "center", behavior: "auto" });
+    positionWalkthrough();
+    $("#tour-next").disabled = false;
+    $("#tour-next").focus({ preventScroll: true });
+  } catch (error) {
+    closeWalkthrough();
+    errorMessage(error);
+  } finally {
+    if (generation === state.tourSequence) {
+      state.tourBusy = false; $("#tour-next").disabled = false; $("#tour-back").disabled = index === 0;
+      positionWalkthrough();
+    }
   }
-  state.tour = next;
-  const [step, title, copy] = tourSteps[next];
-  $("#tour-step").textContent = step; $("#tour-title").textContent = title; $("#tour-copy").textContent = copy;
-  $("#tour-panel").hidden = false; $("#tour-next").textContent = next === 3 ? "Finish investigation ✓" : "Next step →";
+}
+
+async function startWalkthrough() {
+  if (state.tourBusy) return;
+  tourPreviousFocus = document.activeElement;
+  await showWalkthroughStep(0);
 }
 
 function renderReleaseResult(result) {
@@ -242,9 +357,22 @@ document.querySelectorAll("[data-tab]").forEach((button, index, buttons) => {
 $("#replay-before").addEventListener("click", event => busy(event.currentTarget, replayReference));
 $("#approve-run").addEventListener("click", event => busy(event.currentTarget, async () => { await api(`/api/runs/${state.before}/approve`, {}); await loadRuns(); toast("Reference verified and approval recorded."); }));
 $("#check-release").addEventListener("click", event => busy(event.currentTarget, async () => { renderReleaseResult(await api("/api/release", { approved_id: state.before, candidate_id: state.after })); }));
-$("#tour-button").addEventListener("click", event => busy(event.currentTarget, async () => { state.tour = -1; await advanceTour(); }));
-$("#tour-next").addEventListener("click", event => busy(event.currentTarget, advanceTour));
-$("#tour-close").addEventListener("click", () => { state.tour = -1; $("#tour-panel").hidden = true; });
+$("#tour-button").addEventListener("click", startWalkthrough);
+$("#tour-next").addEventListener("click", () => showWalkthroughStep(state.tour + 1));
+$("#tour-back").addEventListener("click", () => showWalkthroughStep(Math.max(0, state.tour - 1)));
+$("#tour-close").addEventListener("click", closeWalkthrough);
+window.addEventListener("resize", positionWalkthrough);
+window.addEventListener("scroll", positionWalkthrough, true);
+document.addEventListener("keydown", event => {
+  if (state.tour < 0) return;
+  if (event.key === "Escape") { event.preventDefault(); closeWalkthrough(); }
+  if (event.key === "Tab") {
+    const buttons = [...$("#tour-panel").querySelectorAll("button:not(:disabled)")];
+    const index = buttons.indexOf(document.activeElement);
+    event.preventDefault();
+    buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
+  }
+});
 for (const id of ["#new-run", "#mobile-new-run"]) $(id).addEventListener("click", () => { $("#form-error").hidden = true; $("#run-dialog").showModal(); });
 $("#close-dialog").addEventListener("click", () => $("#run-dialog").close());
 $("#run-dataset").addEventListener("change", event => { $("#upload-field").hidden = event.target.value !== "upload"; });
@@ -275,4 +403,12 @@ $("#forecast-chart").addEventListener("pointermove", event => {
   tooltip.style.top = `${Math.max(0, event.clientY - wrap.top - 50)}px`;
 });
 $("#forecast-chart").addEventListener("pointerleave", () => { $("#chart-tooltip").hidden = true; });
-loadRuns().catch(errorMessage);
+async function initialise() {
+  const health = await api("/api/health");
+  const cloud = health.deployment === "cloudflare";
+  $("#workspace-location").textContent = cloud ? "Cloudflare · browser workspace" : `${location.hostname} · local`;
+  $("#storage-backend").textContent = cloud ? "Storage: Durable Object SQLite" : "Storage: SQLite / WAL";
+  await loadRuns();
+  if (!walkthroughSeen()) await startWalkthrough();
+}
+initialise().catch(errorMessage);

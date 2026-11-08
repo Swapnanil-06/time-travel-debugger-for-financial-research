@@ -30,3 +30,29 @@ jobs:
           node-version: '24'
       - name: Check browser JavaScript syntax
         run: node --check static/app.js
+
+  cloudflare:
+    name: Cloudflare Worker / real runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Verify Python package installation
+        run: python -m pip install .
+      - name: Build deployable Python Worker bundle
+        run: npm run check:worker
+      - name: Test actual Python Worker and Durable Object SQLite
+        run: python scripts/check_worker.py
+      - name: Keep runtime diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workerd-diagnostics
+          path: artifacts/workerd-check.log

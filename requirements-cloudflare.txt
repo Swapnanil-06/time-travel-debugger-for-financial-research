@@ -1,0 +1,2 @@
+# Pure-Python + JavaScript SDK bundled by Wrangler, not a local app dependency.
+workers-runtime-sdk==1.9.6

@@ -30,3 +30,15 @@ Checked in the desktop app's Chromium-based in-app browser:
 ## Expected limits
 
 This validation covers the bundled models and local single-user workflow. It does not establish predictive model performance, authenticated approval, cloud deployment, load capacity, or compatibility with arbitrary Python packages. Strict replay intentionally refuses a changed recorded execution context.
+
+## Cloudflare adaptation
+
+The adapted deployment is checked separately using pinned Wrangler 4.158.0, Cloudflare's Python runtime SDK 1.9.6 and real local workerd with SQLite-backed Durable Objects. The original package-discovery error is checked by building/installing the project with its explicit setuptools package list.
+
+Five live Worker tests exercise asset/security headers, health information, browser workspace isolation, capture, comparison, exact replay, approval, blocked/passing releases, exports, imports, input bounds and cross-origin writes. Five additional storage contract tests exercise the SQL transport, shared core logic and immutable-record triggers.
+
+All 39 tests passed together against the running Worker. The final dry-run bundle was approximately 143 KiB before compression. A browser workspace retained the same reference run and passed exact replay after stopping and restarting the owned local Worker process.
+
+The six-step first-visit guide was checked in the actual Cloudflare-backed interface: automatic opening, all explanations and live actions, Back/Next, completion remembered across reload, manual restart, Escape to skip, and a 390 × 844 mobile viewport. The instruction panel was checked beside the highlighted replay result without covering it. `walkthrough.jpg` shows the first step of the running guide.
+
+The GitHub Actions Cloudflare job builds a dry-run deployment and runs the actual runtime checks without Cloudflare account credentials. A successful local/dry-run check does not itself claim that the user's Cloudflare production deployment has completed; the Cloudflare deployment log is the source of truth for that result.

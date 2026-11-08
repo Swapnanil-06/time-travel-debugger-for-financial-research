@@ -62,6 +62,18 @@ The response is a decision record for the local demonstration. There is no produ
 - **A simple model over claimed forecasting sophistication:** a transparent baseline yields a hand-verifiable expected effect. This project evaluates research infrastructure, not investment performance.
 - **Native browser APIs over frontend dependencies:** an SVG chart, accessible controls, keyboard-operated tabs and a responsive interface without a package-manager build.
 
+## Cloudflare execution and persistence
+
+`worker.py` handles incoming Worker requests. Static pages and assets use the `ASSETS` binding. API calls are routed by a random browser-workspace cookie to the SQLite-backed `ResearchWorkspace` Durable Object; no global shared research database is exposed to visitors.
+
+`app/cloud_store.py` adapts the synchronous Cloudflare SQLite API to the small connection/cursor interface used by `Store`. Byte artifacts are losslessly transported as base64 text and decoded before hashing. The core capture, comparison, replay and approval methods are inherited from the same `Store` used locally. SQLite triggers still prevent run and artifact mutation.
+
+The Durable Object wraps seeding and dispatch in `storage.transactionSync`. All SQL cursors are fully consumed synchronously, with no awaits inside that transaction. This preserves atomic captures and prevents request interleaving. `app/cloud_api.py` provides transport-independent API dispatch. The existing local HTTP service remains available and retains its local filesystem database.
+
+`scripts/prepare_worker.py` verifies data provenance, prepares a bounded Python module root and bundles the pinned Cloudflare runtime SDK. Wrangler builds and serves the Python entry point; there is no local TCP listener or filesystem database in the cloud runtime. Only source modules required by that entry point are copied. Build output, vendored SDKs and local runtime state are ignored by Git.
+
+The browser cookie is an unguessable bearer capability, not an authenticated identity. Cloud sessions have bounded input/run counts, but account-based access, approval signatures, operational quotas and production scheduling remain outside this demonstration's claims.
+
 ## Source map
 
 ```text
@@ -71,6 +83,11 @@ app/store.py        Capture, hash store, replay, comparison, approval and releas
 app/bundle.py       Database-independent bundle verification and replay
 app/server.py       Loopback HTTP API and static assets
 app/cli.py          Terminal demo, listing, replay, export and verification
+app/cloud_store.py  Durable Object SQLite adapter using the same research store
+app/cloud_api.py    Transport-independent hosted API dispatch
+worker.py           Cloudflare entry point and isolated workspace Durable Object
+wrangler.jsonc      Worker, static assets, migration and build configuration
+scripts/            Verified bundle preparation and real-runtime test runner
 static/            Browser workbench, chart and guided investigation
 data/              Original CSV and retrieval/provenance record
 tests/             Model, storage, bundle and HTTP contract tests

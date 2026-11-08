@@ -1,6 +1,6 @@
 # A 90-second walkthrough
 
-Start the app with `python -m app.server`, open http://127.0.0.1:8765 and select **Run demo sequence**.
+Start the app with `python -m app.server`, open http://127.0.0.1:8765. The first-visit walkthrough opens automatically; use **Guided walkthrough** to restart it. Six spotlight steps explain saved runs, the changed observation, the changed forecast, exact replay, the release check and creating a new experiment.
 
 ## 0–20 seconds: the changed answer
 

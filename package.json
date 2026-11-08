@@ -1,0 +1,15 @@
+{
+  "name": "financial-research-project",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "description": "Cloudflare deployment tools for Research Replay",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check:worker": "wrangler deploy --dry-run --outdir artifacts/worker-build"
+  },
+  "devDependencies": {
+    "wrangler": "4.158.0"
+  }
+}

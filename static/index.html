@@ -13,7 +13,7 @@
 <header class="topbar">
   <a class="brand" href="/" aria-label="Research Replay home"><span class="brand-mark" aria-hidden="true">rr</span><span>Research Replay</span><span class="version">v0.1</span></a>
   <div class="top-note">RESEARCH / SNAPSHOT COMPARISON / DGS10</div>
-  <div class="top-actions"><button class="button light mobile-capture" id="mobile-new-run">＋ Capture run</button><span class="local"><span></span> 127.0.0.1 · local</span></div>
+  <div class="top-actions"><button class="button light mobile-capture" id="mobile-new-run">＋ Capture run</button><span class="local"><span></span><span id="workspace-location">Workspace</span></span></div>
 </header>
 <div class="shell">
   <aside class="sidebar" aria-label="Research runs">
@@ -21,15 +21,21 @@
     <button class="button dark full" id="new-run"><span>＋</span> Capture a run</button>
     <div class="library-label">CAPTURE ORDER ↑</div>
     <div id="run-list" class="run-list"><p class="muted">Loading captured runs…</p></div>
-    <div class="sidebar-bottom"><strong>Storage: SQLite / WAL</strong><p>Content-addressed artifacts<br>Append-only run records</p><span class="mono">SHA-256 · Decimal(34)</span></div>
+    <div class="sidebar-bottom"><strong id="storage-backend">Storage: SQLite</strong><p>Content-addressed artifacts<br>Append-only run records</p><span class="mono">SHA-256 · Decimal(34)</span></div>
   </aside>
   <main id="main">
     <section class="intro">
       <div><div class="eyebrow">RESEARCH / RUNS / COMPARE</div><h1>Run comparison</h1><p>Inspect captured inputs, compute differences and verify replay.</p></div>
-      <button class="button light" id="tour-button">Run demo sequence <span class="duration">4 steps</span></button>
+      <button class="button light" id="tour-button">Guided walkthrough <span class="duration">6 steps</span></button>
     </section>
-    <section id="tour-panel" class="tour-panel" hidden aria-label="Guided investigation">
-      <div><span class="eyebrow" id="tour-step">01 / 04</span><h2 id="tour-title"></h2><p id="tour-copy"></p></div><div class="tour-actions"><button class="text-button" id="tour-close">Exit tour</button><button class="button dark" id="tour-next">Next step →</button></div>
+    <div id="tour-blocker" class="tour-blocker" hidden></div>
+    <div id="tour-spotlight" class="tour-spotlight" hidden aria-hidden="true"></div>
+    <section id="tour-panel" class="tour-panel" hidden role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-copy">
+      <div class="tour-heading"><span class="eyebrow" id="tour-step">STEP 1 OF 6</span><button class="text-button" id="tour-close" aria-label="Skip walkthrough">Skip</button></div>
+      <div id="tour-progress" class="tour-progress" aria-hidden="true"></div>
+      <h2 id="tour-title"></h2><p id="tour-copy"></p><p id="tour-explanation" class="tour-explanation"></p>
+      <div class="tour-actions"><button class="button light" id="tour-back">Back</button><button class="button dark" id="tour-next">Next →</button></div>
+      <div class="tour-keyboard-hint">Esc to skip · You can restart this walkthrough above.</div>
     </section>
     <div id="error-banner" class="error-banner" role="alert" hidden></div>
     <section class="comparison-bar" aria-label="Choose runs to compare">
@@ -62,7 +68,7 @@
       <div class="detail-grid ledger-details"><article class="card"><div class="eyebrow">CAPTURED MODEL SOURCE</div><h2 id="source-heading">Candidate implementation</h2><pre id="source-code" class="source-code"></pre></article><article class="card"><div class="eyebrow">EXECUTION CONTEXT</div><h2>Runtime and provenance</h2><div id="environment-details"></div><div class="provenance-block"><h3>Dataset provenance</h3><p id="provenance-copy"></p><a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noreferrer">View series at FRED ↗</a><p class="fine-print">The bundled snapshot was downloaded for this project. Its observation dates are not proof of historical availability. The correction scenario is injected, not a real FRED revision.</p></div></article></div>
     </section>
     <section id="panel-release" role="tabpanel" aria-labelledby="tab-release" hidden>
-      <article class="card release-card"><div class="eyebrow">RELEASE POLICY</div><h2>Approved artifact verification</h2><p class="section-copy">Approve the exact reference artifacts, then check the candidate against them. A changed label is fine. Changed data, code, parameters, environment, or output blocks release.</p><div class="release-flow"><div><span class="flow-number">01</span><h3>Verify & approve</h3><p id="approval-description">Replay the reference and bind approval to its manifest.</p><button id="approve-run" class="button dark">Approve reference</button></div><span class="flow-arrow" aria-hidden="true">→</span><div><span class="flow-number">02</span><h3>Check the candidate</h3><p>Re-execute both runs and compare all five artifact fingerprints.</p><button id="check-release" class="button light">Check release</button></div></div><div id="release-result" class="release-result" hidden aria-live="polite"></div><p class="fine-print">A local demonstration of an approval boundary. No job is deployed. This workspace has no user authentication, external signing authority, or production scheduler.</p></article>
+      <article class="card release-card"><div class="eyebrow">RELEASE POLICY</div><h2>Approved artifact verification</h2><p class="section-copy">Approve the exact reference artifacts, then check the candidate against them. A changed label is fine. Changed data, code, parameters, environment, or output blocks release.</p><div class="release-flow"><div><span class="flow-number">01</span><h3>Verify & approve</h3><p id="approval-description">Replay the reference and bind approval to its manifest.</p><button id="approve-run" class="button dark">Approve reference</button></div><span class="flow-arrow" aria-hidden="true">→</span><div><span class="flow-number">02</span><h3>Check the candidate</h3><p>Re-execute both runs and compare all five artifact fingerprints.</p><button id="check-release" class="button light">Check release</button></div></div><div id="release-result" class="release-result" hidden aria-live="polite"></div><p class="fine-print">Demonstration approval boundary. The release check does not deploy a job. Approvals are workspace decisions without an authenticated approver or external signing authority.</p></article>
     </section>
     <footer class="footer"><span>RESEARCH REPLAY <span class="footer-slash">/</span> Built by Swapnanil Chattopadhyay</span><span>Illustrative model · No predictive-performance claim</span></footer>
   </main>

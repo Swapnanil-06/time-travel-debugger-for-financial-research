@@ -14,13 +14,17 @@ Built by [Swapnanil Chattopadhyay](https://github.com/Swapnanil-06).
 
 Requires **Python 3.11 or newer**. No packages, API keys, database server, JavaScript build step, or runtime internet access required.
 
+This requirement applies to local mode. The Cloudflare deployment below additionally uses Node and a pinned Worker SDK at build time.
+
 ```bash
 git clone https://github.com/Swapnanil-06/time-travel-debugger-for-financial-research.git
 cd time-travel-debugger-for-financial-research
 python -m app.server
 ```
 
-Open **http://127.0.0.1:8765** and select **Run demo sequence**. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
+Open **http://127.0.0.1:8765**. A first-visit walkthrough highlights each part of the interface and explains the example in plain language. Use **Guided walkthrough** to restart it; **Skip**, **Back** and **Next** are available throughout. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
+
+The six steps explain saved experiments, the changed observation, the changed forecast, exact replay, the approval check and creating a new experiment. The guide runs real replay/release requests and remembers completion or skipping in this browser. [Walkthrough preview](docs/walkthrough.jpg).
 
 Prefer a terminal? The complete investigation also runs without a browser and uses a disposable database:
 
@@ -137,13 +141,55 @@ The standard-library tests cover hand-checkable model outputs, data provenance, 
 
 GitHub Actions runs the Python suite on Linux and Windows with Python 3.11 and 3.13.
 
+## Deploy to Cloudflare Workers
+
+The repository now includes a Python Worker entry point, a pinned Wrangler CLI, static asset configuration and a SQLite-backed Durable Object. The deployed application runs the same Python models, artifact checks and replay implementation as local mode.
+
+For the existing Cloudflare Workers & Pages project:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `/` |
+| Build command | Leave empty |
+| Deploy command | `npx wrangler deploy` |
+| Worker name | `financial-research-project` |
+
+Redeploy the latest `main` commit. No database ID, API key in source, manual D1 migration or external Python server is required. Wrangler's migration creates the `ResearchWorkspace` Durable Object class. Cloudflare's existing build token must have permission to deploy Workers and their Durable Objects; credentials stay in the Cloudflare build environment.
+
+Wrangler's custom build hook verifies the source CSV, copies only the required Python modules into an isolated module root, and vendors `workers-runtime-sdk==1.9.6`. This avoids bundling development tools, tests or `node_modules` into the Worker. The explicit setuptools package list also fixes the automatic `pip install .` step used by Cloudflare Builds.
+
+For local testing of the actual Cloudflare runtime, with Node 22+ and Python available:
+
+```bash
+npm ci
+npm run dev
+```
+
+Open the localhost URL printed by Wrangler (normally http://127.0.0.1:8787). To check the deployment without publishing:
+
+```bash
+npm run check:worker
+python scripts/check_worker.py
+```
+
+The second command starts a disposable local workerd process, runs five live HTTP tests, and stops that process. It tests real Python Worker/JavaScript FFI behavior and real Durable Object SQLite, not just a mock. Cloudflare account credentials are not needed for these local checks.
+
+### Hosted workspace behavior
+
+- Each browser receives an unguessable, HttpOnly, SameSite=Strict workspace cookie, with Secure enabled on HTTPS. Each cookie routes to a separate Durable Object; other visitors' runs and approvals are not shared.
+- Captures persist across requests, reloads and Worker restarts. The workspace cookie is a bearer capability, not an authenticated user account. Clearing it creates a new workspace; there is no account-based recovery.
+- The public demo allows 40 runs and up to 1,000 observations per run per workspace. Local mode supports larger inputs. Artifact and run records remain append-only in both modes.
+- Cloud SQLite uses the same schema and immutable-record triggers. A request executes inside a synchronous Durable Object transaction, so partial captures roll back and concurrent requests cannot interleave its writes.
+- Strict replay compares the captured runtime. A bundle captured under Cloudflare's Emscripten Python runtime will not pass strict replay under a different desktop Python environment. The cloud workspace can replay its own captured runs.
+- The interface reports the actual deployment and storage backend. The hosted app is still a research reproducibility demonstration, without authenticated approvers or a production scheduling integration.
+
 ## Scope and limitations
 
 - The correction is **injected for demonstration**, not an actual FRED revision. The snapshot was downloaded on 8 November 2026 and is not a point-in-time 2024 vintage. The project does not claim a look-ahead-free historical backtest.
 - Hash checks and SQLite triggers detect accidental alteration within this workflow. They are not an externally signed audit trail and do not protect against an administrator who can rewrite the database and its checksums.
 - Approval is a local recorded decision, with no authenticated approver identity. The release gate verifies artifacts; it does not deploy a job or connect to a scheduler.
 - Runs are intentionally limited to two bundled model implementations. Containerized historical runtimes and arbitrary research packages are outside this version's scope.
-- The server binds to loopback, rejects unexpected Host headers and cross-origin browser writes, and uses a restrictive content security policy. It is a **local single-user workbench**, not an internet-facing production service.
+- Local mode binds to loopback and rejects unexpected Host headers. Hosted mode uses browser-isolated Durable Objects, bounded inputs and same-origin write checks. Both modes apply a restrictive content security policy. Neither is presented as a production trading system.
 
 Application state lives under ignored `.replay/`. Stop with `Ctrl+C`. To use a separate workspace without touching existing runs:
 

@@ -11,22 +11,24 @@ from pathlib import Path
 
 from .engine import ROOT, MODELS, IntegrityError, ResearchError, canonical, digest, environment, execute, normalise_config, normalise_rows
 
+SCHEMA = """
+    CREATE TABLE IF NOT EXISTS blobs (sha TEXT PRIMARY KEY, content BLOB NOT NULL);
+    CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, manifest BLOB NOT NULL, sha TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS approvals (run_id TEXT PRIMARY KEY REFERENCES runs(id), manifest_sha TEXT NOT NULL, approved_at TEXT NOT NULL);
+    CREATE TRIGGER IF NOT EXISTS immutable_runs_update BEFORE UPDATE ON runs BEGIN SELECT RAISE(ABORT, 'Run records are immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS immutable_runs_delete BEFORE DELETE ON runs BEGIN SELECT RAISE(ABORT, 'Run records are immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS immutable_blobs_update BEFORE UPDATE ON blobs BEGIN SELECT RAISE(ABORT, 'Artifacts are immutable'); END;
+    CREATE TRIGGER IF NOT EXISTS immutable_blobs_delete BEFORE DELETE ON blobs BEGIN SELECT RAISE(ABORT, 'Artifacts are immutable'); END;
+"""
+
 
 class Store:
     def __init__(self, path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
-            db.executescript("""
-                PRAGMA journal_mode=WAL;
-                CREATE TABLE IF NOT EXISTS blobs (sha TEXT PRIMARY KEY, content BLOB NOT NULL);
-                CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, manifest BLOB NOT NULL, sha TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS approvals (run_id TEXT PRIMARY KEY REFERENCES runs(id), manifest_sha TEXT NOT NULL, approved_at TEXT NOT NULL);
-                CREATE TRIGGER IF NOT EXISTS immutable_runs_update BEFORE UPDATE ON runs BEGIN SELECT RAISE(ABORT, 'Run records are immutable'); END;
-                CREATE TRIGGER IF NOT EXISTS immutable_runs_delete BEFORE DELETE ON runs BEGIN SELECT RAISE(ABORT, 'Run records are immutable'); END;
-                CREATE TRIGGER IF NOT EXISTS immutable_blobs_update BEFORE UPDATE ON blobs BEGIN SELECT RAISE(ABORT, 'Artifacts are immutable'); END;
-                CREATE TRIGGER IF NOT EXISTS immutable_blobs_delete BEFORE DELETE ON blobs BEGIN SELECT RAISE(ABORT, 'Artifacts are immutable'); END;
-            """)
+            db.execute("PRAGMA journal_mode=WAL")
+            db.executescript(SCHEMA)
 
     @contextmanager
     def connect(self):
@@ -162,8 +164,15 @@ class Store:
 
 
 def dataset(revised=False):
-    metadata = json.loads((ROOT / "data/provenance.json").read_text("utf-8"))
-    raw = (ROOT / "data/dgs10.csv").read_bytes()
+    # Wrangler embeds the same verified source data in a generated Python module.
+    # CPython local mode continues to read the original files from the repository.
+    import sys
+    if sys.platform == "emscripten":
+        from ._cloud_data import CSV_BYTES, PROVENANCE
+        metadata, raw = dict(PROVENANCE), CSV_BYTES
+    else:
+        metadata = json.loads((ROOT / "data/provenance.json").read_text("utf-8"))
+        raw = (ROOT / "data/dgs10.csv").read_bytes()
     if digest(raw) != metadata["raw_csv_sha256"]:
         raise IntegrityError("Bundled CSV does not match its recorded provenance checksum.")
     rows = []

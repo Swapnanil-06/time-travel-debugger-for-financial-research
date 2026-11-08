@@ -39,7 +39,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .top-note { color: #a5947a; font: 9px var(--mono); letter-spacing: .5px; }
 .top-actions { display: flex; align-items: center; gap: 15px; }
 .local { color: #b9b9b9; font: 10px var(--mono); display: flex; align-items: center; gap: 7px; white-space: nowrap; }
-.local span { display: inline-block; width: 5px; height: 5px; background: #76dd95; }
+.local > span:first-child { display: inline-block; width: 5px; height: 5px; background: #76dd95; }
 .mobile-capture { display: none !important; }
 .shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: calc(100vh - 46px); }
 .sidebar { background: #090909; color: #c5c5c5; border-right: 1px solid #3a3021; padding: 18px 10px; display: flex; flex-direction: column; min-width: 0; }
@@ -190,11 +190,24 @@ tr:last-child td { border-bottom: 0; }
 .release-result p { margin: 4px 0; font-size: 10px; }
 .release-result strong { color: #ffbd60; font: 600 11px var(--mono); }
 .release-result.pass strong { color: var(--green); }
-.tour-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 1px solid #70552b; border-left: 3px solid #ffb343; background: #1b160d; padding: 13px 16px; margin-bottom: 16px; }
-.tour-panel h2 { font: 600 12px var(--mono); margin-top: 5px; }
-.tour-panel p { max-width: 740px; color: var(--muted); font-size: 10px; line-height: 1.7; margin: 6px 0 0; }
-.tour-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.text-button { border: 0; background: transparent; padding: 6px; color: var(--muted); font-size: 10px; }
+/* First-visit walkthrough: the spotlight follows real controls and results. */
+.tour-blocker { position: fixed; inset: 0; z-index: 990; }
+body.walkthrough-active main { padding-bottom: 520px; }
+.tour-spotlight { position: fixed; z-index: 1000; pointer-events: none; border: 2px solid #ffb343; box-shadow: 0 0 0 9999px #000b; }
+.tour-panel { position: fixed; z-index: 1002; display: block; width: 390px; max-height: calc(100dvh - 24px); overflow-y: auto; border: 1px solid #a87932; background: #17130c; color: #ece5d8; padding: 18px; margin: 0; box-shadow: 0 8px 40px #0009; }
+.tour-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+.tour-heading .eyebrow { color: #e3b471; font-size: 10px; }
+.tour-panel h2 { font: 600 16px/1.4 var(--mono); color: #ffca76; margin: 13px 0 10px; }
+.tour-panel p { font: 13px/1.7 "Segoe UI", Arial, sans-serif; color: #e1ddd4; margin: 0; }
+.tour-panel .tour-explanation { font-size: 11px; color: #b6aa96; margin-top: 11px; }
+.tour-progress { display: flex; gap: 4px; margin: 10px 0 0; }
+.tour-progress span { flex: 1; height: 3px; background: #423827; }
+.tour-progress span.complete { background: #d99b37; }
+.tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.tour-actions .button { min-height: 34px; font-size: 11px; }
+.tour-actions button:disabled { cursor: default; }
+.tour-keyboard-hint { margin-top: 12px; color: #a89a83; font: 9px/1.6 var(--mono); }
+.text-button { border: 0; background: transparent; padding: 6px; color: #d8bd94; font-size: 11px; }
 .error-banner { background: #25110e; border: 1px solid #9b4c3e; padding: 11px 14px; margin-bottom: 13px; color: #ff9d88; font-size: 11px; }
 .footer { display: flex; justify-content: space-between; gap: 15px; padding: 18px 0; font: 8px/1.7 var(--mono); color: #9c9385; }
 .footer-slash { padding: 0 7px; }
@@ -222,7 +235,6 @@ dialog::backdrop { background: #000000ad; }
   .dataset-caption { display: none; }
   .detail-grid { grid-template-columns: 1fr; }
   .duration { display: none; }
-  .tour-panel { flex-direction: column; align-items: start; gap: 12px; }
 }
 @media (max-width: 950px) {
   .shell { grid-template-columns: 1fr; }
