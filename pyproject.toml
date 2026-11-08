@@ -1,0 +1,6 @@
+[project]
+name = "research-replay"
+version = "0.1.0"
+description = "Capture, compare and replay financial research runs."
+requires-python = ">=3.11"
+dependencies = []

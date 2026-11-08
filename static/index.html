@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A reproducibility workbench for financial research. Capture inputs, investigate changed results, and replay the evidence.">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>Research Replay — Every result has a history.</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to workbench</a>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Research Replay home"><span class="brand-mark" aria-hidden="true">↶</span><span>research<span class="brand-light"> / replay</span></span></a>
+  <div class="top-note">FINANCIAL RESEARCH · REPRODUCIBILITY WORKBENCH</div>
+  <div class="top-actions"><button class="button light mobile-capture" id="mobile-new-run">＋ Capture run</button><span class="local"><span></span> Local workspace</span></div>
+</header>
+<div class="shell">
+  <aside class="sidebar" aria-label="Research runs">
+    <div class="sidebar-title"><span>RUN LIBRARY</span><span id="run-count" class="count">—</span></div>
+    <button class="button dark full" id="new-run"><span>＋</span> Capture a run</button>
+    <div class="library-label">CAPTURED EXPERIMENTS</div>
+    <div id="run-list" class="run-list"><p class="muted">Loading captured runs…</p></div>
+    <div class="sidebar-bottom"><div class="tiny-square">↳</div><strong>Evidence, kept intact.</strong><p>Content-addressed artifacts.<br>Append-only research history.</p><span class="mono">SHA-256 / SQLite / Decimal</span></div>
+  </aside>
+  <main id="main">
+    <section class="intro">
+      <div><div class="eyebrow"><span class="orange-dot"></span> THE RESEARCH, RECONSTRUCTED</div><h1>Every result has a history.</h1><p>Find what changed. Reproduce what happened. Trust the handover.</p></div>
+      <button class="button light" id="tour-button"><span aria-hidden="true">▷</span> Start the investigation <span class="duration">60 sec</span></button>
+    </section>
+    <section id="tour-panel" class="tour-panel" hidden aria-label="Guided investigation">
+      <div><span class="eyebrow" id="tour-step">01 / 04</span><h2 id="tour-title"></h2><p id="tour-copy"></p></div><div class="tour-actions"><button class="text-button" id="tour-close">Exit tour</button><button class="button dark" id="tour-next">Next step →</button></div>
+    </section>
+    <div id="error-banner" class="error-banner" role="alert" hidden></div>
+    <section class="comparison-bar" aria-label="Choose runs to compare">
+      <label><span class="field-label">REFERENCE RUN</span><select id="before-select" aria-label="Reference run"></select></label>
+      <button class="swap" id="swap-runs" aria-label="Swap reference and candidate">⇄</button>
+      <label><span class="field-label">CANDIDATE RUN</span><select id="after-select" aria-label="Candidate run"></select></label>
+      <div class="comparison-state"><span class="field-label">COMPARISON</span><span id="comparison-status">Loading…</span></div>
+    </section>
+    <div class="tabs-row"><div class="tabs" role="tablist" aria-label="Workbench views"><button id="tab-analysis" role="tab" aria-selected="true" aria-controls="panel-analysis" data-tab="analysis">Investigation</button><button id="tab-artifacts" role="tab" aria-selected="false" aria-controls="panel-artifacts" data-tab="artifacts" tabindex="-1">Artifact ledger</button><button id="tab-release" role="tab" aria-selected="false" aria-controls="panel-release" data-tab="release" tabindex="-1">Release gate</button></div><span class="dataset-caption">DGS10 <span>·</span> US 10-year Treasury yield</span></div>
+    <section id="panel-analysis" role="tabpanel" aria-labelledby="tab-analysis">
+      <div class="metrics" id="metrics"></div>
+      <div class="analysis-grid">
+        <article class="card chart-card">
+          <div class="card-heading"><div><div class="eyebrow">OUTPUT COMPARISON</div><h2>Same question. Different answer?</h2></div><span class="tag">YIELD · %</span></div>
+          <div class="chart-legend"><span><i class="line-key history"></i> Observed</span><span><i class="line-key reference"></i> Reference forecast</span><span><i class="line-key candidate"></i> Candidate forecast</span></div>
+          <div id="chart-wrap" class="chart-wrap"><svg id="forecast-chart" viewBox="0 0 820 300" role="img" aria-label="Observed Treasury yields and compared forecasts"></svg><div id="chart-tooltip" class="chart-tooltip" hidden></div></div>
+          <div class="chart-footer"><span id="chart-range"></span><span>Forecast steps count observations, not calendar days.</span></div>
+        </article>
+        <article class="card findings-card"><div class="eyebrow">THE DIAGNOSIS</div><h2 id="finding-title">Reading the evidence…</h2><p id="finding-copy"></p><div id="fingerprints"></div><button id="replay-before" class="button dark full"><span>↶</span> Replay reference run</button><p class="fine-print">Re-executes the captured model and inputs.<br>Verifies the result against its original SHA-256.</p></article>
+      </div>
+      <article id="replay-result" class="replay-result" hidden aria-live="polite"></article>
+      <div class="detail-grid">
+        <article class="card"><div class="card-heading"><div><div class="eyebrow">INPUT DIFF</div><h2>What moved underneath?</h2></div><span class="tag" id="diff-count">—</span></div><p class="section-copy" id="diff-explainer"></p><div class="table-scroll"><table><thead><tr><th>Observation / setting</th><th>Reference</th><th>Candidate</th><th>Change</th></tr></thead><tbody id="diff-body"></tbody></table></div></article>
+        <article class="card"><div class="card-heading"><div><div class="eyebrow">CONTROLLED REPLAYS</div><h2>Follow the change.</h2></div><span class="tag" id="common-step">T+5</span></div><div id="waterfall"></div><p class="fine-print attribution-note">Order: data → model → configuration. These are conditional replay differences, not causal effects. Interactions can change their allocation.</p></article>
+      </div>
+    </section>
+    <section id="panel-artifacts" role="tabpanel" aria-labelledby="tab-artifacts" hidden>
+      <article class="card"><div class="card-heading"><div><div class="eyebrow">THE CHAIN OF EVIDENCE</div><h2>Five artifacts. One immutable run.</h2></div><a id="export-run" class="button light" href="#">↓ Export candidate bundle</a></div><p class="section-copy">Each artifact is stored by its full SHA-256 digest. Every read checks its bytes; run records and artifact blobs reject updates and deletes.</p><div id="artifact-table" class="table-scroll"></div></article>
+      <div class="detail-grid ledger-details"><article class="card"><div class="eyebrow">CAPTURED MODEL SOURCE</div><h2 id="source-heading">Candidate implementation</h2><pre id="source-code" class="source-code"></pre></article><article class="card"><div class="eyebrow">EXECUTION CONTEXT</div><h2>The details that travel with it.</h2><div id="environment-details"></div><div class="provenance-block"><h3>Dataset provenance</h3><p id="provenance-copy"></p><a href="https://fred.stlouisfed.org/series/DGS10" target="_blank" rel="noreferrer">View series at FRED ↗</a><p class="fine-print">The bundled snapshot was downloaded for this project. Its observation dates are not proof of historical availability. The correction scenario is injected, not a real FRED revision.</p></div></article></div>
+    </section>
+    <section id="panel-release" role="tabpanel" aria-labelledby="tab-release" hidden>
+      <article class="card release-card"><div class="eyebrow">RESEARCH → PRODUCTION</div><h2>A handover with a verifiable boundary.</h2><p class="section-copy">Approve the exact reference artifacts, then check the candidate against them. A changed label is fine. Changed data, code, parameters, environment, or output blocks release.</p><div class="release-flow"><div><span class="flow-number">01</span><h3>Verify & approve</h3><p id="approval-description">Replay the reference and bind approval to its manifest.</p><button id="approve-run" class="button dark">Approve reference</button></div><span class="flow-arrow" aria-hidden="true">→</span><div><span class="flow-number">02</span><h3>Check the candidate</h3><p>Re-execute both runs and compare all five artifact fingerprints.</p><button id="check-release" class="button light">Check release</button></div></div><div id="release-result" class="release-result" hidden aria-live="polite"></div><p class="fine-print">A local demonstration of an approval boundary. No job is deployed. This workspace has no user authentication, external signing authority, or production scheduler.</p></article>
+    </section>
+    <footer class="footer"><span>RESEARCH REPLAY <span class="footer-slash">/</span> Built by Swapnanil Chattopadhyay</span><span>Illustrative model · No predictive-performance claim</span></footer>
+  </main>
+</div>
+<dialog id="run-dialog" aria-labelledby="dialog-title">
+  <form id="run-form"><div class="dialog-heading"><div><div class="eyebrow">A NEW PIECE OF EVIDENCE</div><h2 id="dialog-title">Capture an experiment.</h2></div><button type="button" class="close-button" id="close-dialog" aria-label="Close experiment form">×</button></div><p class="section-copy">Choose the inputs. The model runs on the server and its artifacts are captured together.</p>
+  <label class="form-field">Run label<input id="run-label" name="label" required maxlength="100" value="My research experiment"></label>
+  <label class="form-field">Data snapshot<select id="run-dataset"><option value="original">FRED snapshot · original</option><option value="corrected">FRED snapshot · injected +25 bp correction</option><option value="upload">Import my own CSV</option></select></label>
+  <div id="upload-field" hidden><label class="form-field">CSV observations<input id="run-file" type="file" accept=".csv,text/csv"></label><p class="fine-print">UTF-8 CSV: date,value or observation_date,DGS10. Sorted unique dates, finite yields in percent. Empty observations are skipped.</p></div>
+  <label class="form-field">Model implementation<select id="run-model"><option value="equal-weight">v1 · Equal-weight drift</option><option value="recency-weighted">v2 · Recency-weighted drift</option></select></label>
+  <div class="form-columns"><label class="form-field">Lookback observations<input id="run-lookback" type="number" min="2" max="120" step="1" value="20" required></label><label class="form-field">Forecast steps<input id="run-horizon" type="number" min="1" max="20" step="1" value="5" required></label></div>
+  <p class="dialog-error" id="form-error" role="alert" hidden></p><div class="dialog-footer"><span class="fine-print">Captured runs cannot be edited.</span><button type="submit" class="button dark" id="capture-submit">Capture run →</button></div></form>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

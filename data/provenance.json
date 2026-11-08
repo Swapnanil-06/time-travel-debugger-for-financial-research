@@ -1,0 +1,15 @@
+{
+  "source": "Board of Governors of the Federal Reserve System (US), DGS10, retrieved from FRED, Federal Reserve Bank of St. Louis",
+  "series": "DGS10",
+  "series_title": "Market Yield on U.S. Treasury Securities at 10-Year Constant Maturity, Quoted on an Investment Basis",
+  "series_url": "https://fred.stlouisfed.org/series/DGS10",
+  "download_url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2024-01-02&coed=2024-06-28",
+  "retrieved_at": "2026-11-08",
+  "observation_start": "2024-01-02",
+  "observation_end": "2024-06-28",
+  "raw_csv_sha256": "897fd8f9fbfe43d1ddb07605a5074d7e2ff8da43834016fe3b1f73f182ead322",
+  "units": "Percent, daily, not seasonally adjusted",
+  "missing_values": "Missing observations are dropped; no forward filling or interpolation.",
+  "vintage_note": "Downloaded snapshot, not a point-in-time historical vintage. Do not infer publication availability from observation dates.",
+  "scenario_note": "The corrected scenario deliberately adds 0.25 percentage points to the observation 20 observed steps before the final observation. This is an injected demonstration, not a reported FRED revision."
+}
