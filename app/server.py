@@ -10,6 +10,9 @@ from urllib.parse import parse_qs, urlparse
 from .engine import ROOT, IntegrityError, ResearchError
 from .store import Store, dataset, seed
 
+# Windows MIME databases may not include web fonts.
+mimetypes.add_type("font/woff2", ".woff2")
+
 
 def handler_for(store):
     class Handler(BaseHTTPRequestHandler):
