@@ -24,7 +24,7 @@ cd time-travel-debugger-for-financial-research
 python -m app.server
 ```
 
-Open **http://127.0.0.1:8765**. A first-visit walkthrough highlights each part of the interface and explains the example in plain language. Use **Guided walkthrough** to restart it; **Skip**, **Back** and **Next** are available throughout. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
+Open **http://127.0.0.1:8765**. A first-visit walkthrough highlights each part of the interface and explains the example in plain language. Use **Walk through an example** to restart it; **Skip**, **Back** and **Next** are available throughout. On Windows, `py` can be used in place of `python`; on some Unix systems, use `python3`.
 
 The six steps explain saved experiments, the changed observation, the changed forecast, exact replay, the approval check and creating a new experiment. The guide runs real replay/release requests and remembers completion or skipping in this browser. [Walkthrough preview](docs/walkthrough.jpg).
 

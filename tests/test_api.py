@@ -42,7 +42,8 @@ class ApiTests(unittest.TestCase):
         return status, result_headers, content
 
     def test_static_assets_serve_with_security_headers(self):
-        for path, mime in [("/", "text/html"), ("/app.js", "javascript"), ("/style.css", "text/css"), ("/favicon.svg", "image/svg+xml")]:
+        for path, mime in [("/", "text/html"), ("/app.js", "javascript"), ("/style.css", "text/css"), ("/favicon.svg", "image/svg+xml"),
+                           ("/instrument-serif.woff2", "font/woff2"), ("/manrope.woff2", "font/woff2")]:
             with self.subTest(path=path):
                 status, headers, content = self.request("GET", path)
                 self.assertEqual(status, 200)

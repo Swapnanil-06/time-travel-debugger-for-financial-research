@@ -3,30 +3,32 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A reproducibility workbench for financial research. Capture inputs, investigate changed results, and replay the evidence.">
-  <meta name="theme-color" content="#090909">
+  <meta name="theme-color" content="#202321">
   <title>Research Replay | Run comparison</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
+  <link rel="preload" href="/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/manrope.woff2" as="font" type="font/woff2" crossorigin>
   <script src="/app.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to workbench</a>
 <header class="topbar">
-  <a class="brand" href="/" aria-label="Research Replay home"><span class="brand-mark" aria-hidden="true">rr</span><span>Research Replay</span><span class="version">v0.1</span></a>
-  <div class="top-note">RESEARCH / SNAPSHOT COMPARISON / DGS10</div>
-  <div class="top-actions"><button class="button light mobile-capture" id="mobile-new-run">＋ Capture run</button><span class="local"><span></span><span id="workspace-location">Workspace</span></span></div>
+  <a class="brand" href="/" aria-label="Research Replay home"><span>Research Replay<span class="brand-period">.</span></span><span class="version">v0.1</span></a>
+  <div class="top-note">FINANCIAL RESEARCH / REPRODUCIBILITY WORKBENCH</div>
+  <div class="top-actions"><button class="button light mobile-capture" id="mobile-new-run">Capture run</button><span class="local"><span></span><span id="workspace-location">Workspace</span></span></div>
 </header>
 <div class="shell">
   <aside class="sidebar" aria-label="Research runs">
-    <div class="sidebar-title"><span>RUNS</span><span id="run-count" class="count">—</span></div>
-    <button class="button dark full" id="new-run"><span>＋</span> Capture a run</button>
-    <div class="library-label">CAPTURE ORDER ↑</div>
+    <div class="sidebar-title"><span>Run index</span><span id="run-count" class="count">—</span></div>
+    <button class="button dark full" id="new-run">Capture a run</button>
+    <div class="library-label">EXPERIMENTS / CAPTURE ORDER</div>
     <div id="run-list" class="run-list"><p class="muted">Loading captured runs…</p></div>
     <div class="sidebar-bottom"><strong id="storage-backend">Storage: SQLite</strong><p>Content-addressed artifacts<br>Append-only run records</p><span class="mono">SHA-256 · Decimal(34)</span></div>
   </aside>
   <main id="main">
     <section class="intro">
-      <div><div class="eyebrow">RESEARCH / RUNS / COMPARE</div><h1>Run comparison</h1><p>Inspect captured inputs, compute differences and verify replay.</p></div>
-      <button class="button light" id="tour-button">Guided walkthrough <span class="duration">6 steps</span></button>
+      <div><div class="eyebrow">THE WORKBENCH / 01</div><h1>Run comparison<span class="heading-period">.</span></h1><p>Trace a changed forecast back to its captured inputs.</p></div>
+      <button class="button light" id="tour-button">Walk through an example <span class="duration">6 steps</span></button>
     </section>
     <div id="tour-blocker" class="tour-blocker" hidden></div>
     <div id="tour-spotlight" class="tour-spotlight" hidden aria-hidden="true"></div>
@@ -34,7 +36,7 @@
       <div class="tour-heading"><span class="eyebrow" id="tour-step">STEP 1 OF 6</span><button class="text-button" id="tour-close" aria-label="Skip walkthrough">Skip</button></div>
       <div id="tour-progress" class="tour-progress" aria-hidden="true"></div>
       <h2 id="tour-title"></h2><p id="tour-copy"></p><p id="tour-explanation" class="tour-explanation"></p>
-      <div class="tour-actions"><button class="button light" id="tour-back">Back</button><button class="button dark" id="tour-next">Next →</button></div>
+      <div class="tour-actions"><button class="button light" id="tour-back">Back</button><button class="button dark" id="tour-next">Next</button></div>
       <div class="tour-keyboard-hint">Esc to skip · You can restart this walkthrough above.</div>
     </section>
     <div id="error-banner" class="error-banner" role="alert" hidden></div>
@@ -51,7 +53,7 @@
       <div class="analysis-grid">
         <article class="card chart-card">
           <div class="card-heading"><div><div class="eyebrow">01 / OUTPUT</div><h2>Yield projections</h2></div><span class="tag">DGS10 · %</span></div>
-          <div class="chart-legend"><span><i class="line-key history"></i> Observed</span><span><i class="line-key reference"></i> Reference forecast</span><span><i class="line-key candidate"></i> Candidate forecast</span></div>
+          <div class="chart-legend"><span><span class="line-key history" aria-hidden="true"></span> Observed</span><span><span class="line-key reference" aria-hidden="true"></span> Reference forecast</span><span><span class="line-key candidate" aria-hidden="true"></span> Candidate forecast</span></div>
           <div id="chart-wrap" class="chart-wrap"><svg id="forecast-chart" viewBox="0 0 820 300" role="img" aria-label="Observed Treasury yields and compared forecasts"></svg><div id="chart-tooltip" class="chart-tooltip" hidden></div></div>
           <div class="chart-footer"><span id="chart-range"></span><span>Forecast steps count observations, not calendar days.</span></div>
         </article>
@@ -80,7 +82,7 @@
   <div id="upload-field" hidden><label class="form-field">CSV observations<input id="run-file" type="file" accept=".csv,text/csv"></label><p class="fine-print">UTF-8 CSV: date,value or observation_date,DGS10. Sorted unique dates, finite yields in percent. Empty observations are skipped.</p></div>
   <label class="form-field">Model implementation<select id="run-model"><option value="equal-weight">v1 · Equal-weight drift</option><option value="recency-weighted">v2 · Recency-weighted drift</option></select></label>
   <div class="form-columns"><label class="form-field">Lookback observations<input id="run-lookback" type="number" min="2" max="120" step="1" value="20" required></label><label class="form-field">Forecast steps<input id="run-horizon" type="number" min="1" max="20" step="1" value="5" required></label></div>
-  <p class="dialog-error" id="form-error" role="alert" hidden></p><div class="dialog-footer"><span class="fine-print">Captured runs cannot be edited.</span><button type="submit" class="button dark" id="capture-submit">Capture run →</button></div></form>
+  <p class="dialog-error" id="form-error" role="alert" hidden></p><div class="dialog-footer"><span class="fine-print">Captured runs cannot be edited.</span><button type="submit" class="button dark" id="capture-submit">Capture run</button></div></form>
 </dialog>
 <div id="toast" class="toast" role="status" hidden></div>
 </body>

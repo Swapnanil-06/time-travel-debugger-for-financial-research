@@ -52,7 +52,8 @@ def handler_for(store):
                     if len(parts) == 3:
                         return self.send(200, run)
                     raise KeyError("Route not found.")
-                files = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css", "/favicon.svg": "favicon.svg"}
+                files = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css", "/favicon.svg": "favicon.svg",
+                         "/instrument-serif.woff2": "instrument-serif.woff2", "/manrope.woff2": "manrope.woff2"}
                 if path not in files:
                     return self.send(404, {"error": "Not found."})
                 file = ROOT / "static" / files[path]

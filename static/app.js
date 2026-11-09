@@ -310,7 +310,7 @@ async function showWalkthroughStep(index) {
     $("#tour-copy").textContent = step.copy;
     $("#tour-explanation").textContent = step.explanation;
     $("#tour-progress").innerHTML = tourSteps.map((_, i) => `<span class="${i <= index ? "complete" : ""}"></span>`).join("");
-    $("#tour-next").textContent = index === tourSteps.length - 1 ? "Start exploring" : "Next →";
+    $("#tour-next").textContent = index === tourSteps.length - 1 ? "Start exploring" : "Next";
     for (const id of ["#tour-panel", "#tour-blocker", "#tour-spotlight"]) $(id).hidden = false;
     document.body.classList.add("walkthrough-active");
     tourTarget()?.scrollIntoView({ block: "center", behavior: "auto" });
@@ -336,7 +336,7 @@ async function startWalkthrough() {
 
 function renderReleaseResult(result) {
   $("#release-result").classList.toggle("pass", result.allowed);
-  $("#release-result").innerHTML = `<h3><strong>${result.allowed ? "✓ Release check passed" : "⊘ Release blocked"}</strong></h3><p>${escapeHtml(result.message)}</p><p>${result.allowed ? "All five artifact fingerprints match the approved run." : "Create a new approval for changed research before a real production handover."}</p>`;
+  $("#release-result").innerHTML = `<h3><strong>${result.allowed ? "Release check passed" : "Release blocked"}</strong></h3><p>${escapeHtml(result.message)}</p><p>${result.allowed ? "All five artifact fingerprints match the approved run." : "Create a new approval for changed research before a real production handover."}</p>`;
   $("#release-result").hidden = false;
 }
 

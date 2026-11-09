@@ -86,7 +86,7 @@ class LiveWorkerTests(unittest.TestCase):
         self.assertEqual(status, 400, result)
 
     def test_assets_and_health(self):
-        for path in ["/", "/app.js", "/style.css", "/favicon.svg"]:
+        for path in ["/", "/app.js", "/style.css", "/favicon.svg", "/instrument-serif.woff2", "/manrope.woff2"]:
             status, headers, content = self.request("GET", path)
             self.assertEqual(status, 200, path)
             self.assertTrue(content)
